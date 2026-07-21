@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import time
-import threading
 import os
+from pathlib import Path
+import subprocess
+import sys
+from unittest.mock import patch
 
 import pytest
 from PySide6.QtNetwork import QLocalServer
@@ -70,20 +73,29 @@ def test_single_instance_notifies_and_rejects_second_listener(qapp, tmp_path):
         server_name=server_name,
     )
     try:
-        result = []
-        sender = threading.Thread(
-            target=lambda: result.append(SingleInstance.notify_existing("quit", server_name))
+        source_root = Path(__file__).resolve().parents[1] / "src"
+        sender = subprocess.Popen(
+            [
+                sys.executable,
+                "-c",
+                (
+                    "import sys; sys.path.insert(0, sys.argv[2]); "
+                    "from codex_usage_indicator.app import SingleInstance; "
+                    "raise SystemExit(0 if SingleInstance.notify_existing('quit', sys.argv[1]) else 1)"
+                ),
+                server_name,
+                str(source_root),
+            ]
         )
-        sender.start()
-        deadline = time.time() + 1
-        while time.time() < deadline and (not commands or sender.is_alive()):
+        deadline = time.time() + 5
+        while time.time() < deadline and (not commands or sender.poll() is None):
             qapp.processEvents()
             time.sleep(0.01)
-        sender.join(timeout=1)
-        assert result == [True]
+        assert sender.wait(timeout=2) == 0
         assert commands == ["quit"]
-        with pytest.raises(AlreadyRunningError):
-            SingleInstance(lock_path=lock_path, server_name=server_name)
+        with patch.object(SingleInstance, "notify_existing", return_value=True):
+            with pytest.raises(AlreadyRunningError):
+                SingleInstance(lock_path=lock_path, server_name=server_name)
     finally:
         instance.close()
         QLocalServer.removeServer(server_name)

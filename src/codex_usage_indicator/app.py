@@ -230,15 +230,21 @@ class SingleInstance(QObject):
     def notify_existing(command: str = "show", server_name: str = SINGLE_INSTANCE_NAME) -> bool:
         socket = QLocalSocket()
         socket.connectToServer(server_name)
-        if not socket.waitForConnected(250):
+        if not socket.waitForConnected(500):
             return False
-        socket.write(QByteArray(command.encode("ascii", errors="ignore")))
+        if socket.write(QByteArray(command.encode("ascii", errors="ignore"))) < 0:
+            socket.abort()
+            return False
         socket.flush()
-        socket.waitForBytesWritten(250)
-        socket.waitForReadyRead(500)
-        socket.readAll()
+        if socket.bytesToWrite() > 0 and not socket.waitForBytesWritten(500):
+            socket.abort()
+            return False
+        if socket.bytesAvailable() == 0 and not socket.waitForReadyRead(1_000):
+            socket.abort()
+            return False
+        acknowledged = bytes(socket.readAll()).strip() == b"ok"
         socket.disconnectFromServer()
-        return True
+        return acknowledged
 
     def set_callbacks(self, on_activate, on_quit) -> None:
         self._on_activate = on_activate
@@ -256,7 +262,7 @@ class SingleInstance(QObject):
             socket.setParent(self)
             socket.readyRead.connect(lambda active=socket: self._handle_command(active))
             socket.disconnected.connect(socket.deleteLater)
-            if socket.bytesAvailable() > 0:
+            if socket.bytesAvailable() > 0 or socket.waitForReadyRead(500):
                 self._handle_command(socket)
 
     def _handle_command(self, socket: QLocalSocket) -> None:
@@ -268,8 +274,8 @@ class SingleInstance(QObject):
         socket.setProperty("commandHandled", True)
         socket.write(QByteArray(b"ok"))
         socket.flush()
-        socket.waitForBytesWritten(100)
-        socket.disconnectFromServer()
+        if socket.bytesToWrite() > 0:
+            socket.waitForBytesWritten(500)
         if command == "quit" and self._on_quit:
             self._on_quit()
         elif self._on_activate:
