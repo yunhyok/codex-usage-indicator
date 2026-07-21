@@ -1,0 +1,38 @@
+name: tests
+
+permissions:
+  contents: read
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  windows-tests:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e ".[dev]"
+      - run: python -m pytest -q
+      - name: Build and smoke-test packaged EXE
+        shell: powershell
+        run: |
+          python .\tools\generate_assets.py
+          python -m PyInstaller --noconfirm --clean .\CodexUsageIndicator.spec
+          $exe = Resolve-Path .\dist\CodexUsageIndicator\CodexUsageIndicator.exe
+          $process = Start-Process -FilePath $exe -ArgumentList "--smoke-test" -PassThru
+          $process | Wait-Process -Timeout 30 -ErrorAction SilentlyContinue
+          $process.Refresh()
+          if (-not $process.HasExited) {
+            Stop-Process -Id $process.Id -Force
+            throw "Packaged smoke test timed out"
+          }
+          if ($process.ExitCode -ne 0) { throw "Packaged smoke test failed" }
+          $version = (Get-Item -LiteralPath $exe).VersionInfo.ProductVersion
+          if ($version -ne "0.1.0") { throw "Unexpected product version: $version" }
+          if (-not (Test-Path .\dist\CodexUsageIndicator\_internal\PySide6)) {
+            throw "PySide6 payload missing"
+          }
