@@ -31,8 +31,9 @@ jobs:
             throw "Packaged smoke test timed out"
           }
           if ($process.ExitCode -ne 0) { throw "Packaged smoke test failed" }
+          $expectedVersion = (& python -c "import sys; sys.path.insert(0, 'src'); from codex_usage_indicator.constants import APP_VERSION; print(APP_VERSION)").Trim()
           $version = (Get-Item -LiteralPath $exe).VersionInfo.ProductVersion
-          if ($version -ne "0.1.0") { throw "Unexpected product version: $version" }
+          if ($version -ne $expectedVersion) { throw "Unexpected product version: $version" }
           if (-not (Test-Path .\dist\CodexUsageIndicator\_internal\PySide6)) {
             throw "PySide6 payload missing"
           }
