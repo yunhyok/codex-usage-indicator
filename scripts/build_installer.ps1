@@ -4,6 +4,12 @@ Set-StrictMode -Version Latest
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $ProjectRoot
 
+$VersionOutput = & python -c "import sys; sys.path.insert(0, 'src'); from codex_usage_indicator.constants import APP_VERSION; print(APP_VERSION)"
+if ($LASTEXITCODE -ne 0) { throw "Could not read the application version." }
+$Version = ([string]$VersionOutput).Trim()
+if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw "Invalid application version: $Version" }
+$InstallerFileName = "CodexUsageIndicatorSetup-$Version.exe"
+
 Write-Host "[1/6] Generating application icon assets"
 python .\tools\generate_assets.py
 
@@ -49,11 +55,11 @@ Write-Host "[6/6] Building installer"
 & $Iscc ".\installer\CodexUsageIndicator.iss"
 if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed." }
 
-$Installer = Join-Path $ProjectRoot "dist\CodexUsageIndicatorSetup-0.1.0.exe"
+$Installer = Join-Path $ProjectRoot (Join-Path "dist" $InstallerFileName)
 if (-not (Test-Path -LiteralPath $Installer)) { throw "Installer not found: $Installer" }
 $Hash = (Get-FileHash -LiteralPath $Installer -Algorithm SHA256).Hash.ToLowerInvariant()
 $ChecksumPath = "$Installer.sha256"
-"$Hash  CodexUsageIndicatorSetup-0.1.0.exe" | Set-Content -LiteralPath $ChecksumPath -Encoding ascii
+"$Hash  $InstallerFileName" | Set-Content -LiteralPath $ChecksumPath -Encoding ascii
 
 Write-Host "Build complete"
 Write-Host "Installer: $Installer"

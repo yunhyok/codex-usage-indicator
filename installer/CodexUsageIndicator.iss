@@ -1,5 +1,5 @@
 #define MyAppName "Codex Usage Indicator"
-#define MyAppVersion "0.1.0"
+#define MyAppVersion "0.2.0"
 #define MyAppPublisher "yunhyok"
 #define MyAppExeName "CodexUsageIndicator.exe"
 
@@ -24,7 +24,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 CloseApplications=yes
 RestartApplications=no
-VersionInfoVersion=0.1.0.0
+VersionInfoVersion={#MyAppVersion}.0
 VersionInfoProductName={#MyAppName}
 VersionInfoProductVersion={#MyAppVersion}
 VersionInfoDescription={#MyAppName} installer

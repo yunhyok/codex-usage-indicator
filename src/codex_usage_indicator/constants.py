@@ -5,7 +5,7 @@ import os
 import sys
 
 APP_NAME = "Codex Usage Indicator"
-APP_VERSION = "0.1.0"
+APP_VERSION = "0.2.0"
 DISPLAY_NAME = f"{APP_NAME} v{APP_VERSION}"
 ORGANIZATION_NAME = "CodexUsageIndicator"
 POLL_INTERVAL_SECONDS = 60.0

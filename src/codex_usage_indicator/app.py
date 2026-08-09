@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 import logging
 import os
 from pathlib import Path
@@ -72,6 +73,8 @@ def build_tooltip(
     if bucket is None:
         lines.append(detail or "Codex 사용량을 확인하는 중입니다.")
     else:
+        if bucket.credits is not None:
+            lines.append(_credits_text(bucket.credits))
         if bucket.primary:
             lines.append(_window_tooltip_line("외부", bucket.primary))
         if bucket.secondary and bucket.primary:
@@ -89,14 +92,39 @@ def build_tooltip(
     return tooltip
 
 
+def _format_credit_balance(raw: str | None) -> str | None:
+    if raw is None:
+        return None
+    value = raw.strip()
+    if not value or len(value) > 64:
+        return None
+    try:
+        balance = Decimal(value)
+        if not balance.is_finite() or balance < 0:
+            return None
+        if balance == 0:
+            return "0"
+        rounded = balance.quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+    except (InvalidOperation, ValueError):
+        return None
+    if rounded == 0:
+        return "<1"
+    return f"{rounded:,.0f}"
+
+
 def _credits_text(credits: CreditsSnapshot | None) -> str:
     if credits is None:
-        return "크레딧 정보 없음"
+        return "추가 크레딧 잔액: 정보 없음"
     if credits.unlimited:
-        return "크레딧: 무제한"
+        return "추가 크레딧 잔액: 무제한"
     if credits.has_credits:
-        return f"크레딧: {credits.balance or '사용 가능'}"
-    return f"크레딧: 없음 ({credits.balance or '0'})"
+        balance = _format_credit_balance(credits.balance)
+        return (
+            f"추가 크레딧 잔액: {balance} 크레딧"
+            if balance is not None
+            else "추가 크레딧 잔액: 사용 가능 (잔액 미상)"
+        )
+    return "추가 크레딧 잔액: 없음"
 
 
 class DetailsDialog(QDialog):
@@ -108,6 +136,11 @@ class DetailsDialog(QDialog):
         self.title_label = QLabel(f"<h2>{DISPLAY_NAME}</h2>")
         self.state_label = QLabel("사용량을 확인하는 중입니다.")
         self.state_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        self.credits_label = QLabel(_credits_text(None))
+        credits_font = self.credits_label.font()
+        credits_font.setBold(True)
+        self.credits_label.setFont(credits_font)
+        self.credits_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.table = QTableWidget(0, 7)
         self.table.setHorizontalHeaderLabels(
             ["제한", "구간", "사용", "남음", "기간", "초기화", "상태"]
@@ -128,6 +161,7 @@ class DetailsDialog(QDialog):
         buttons.addButton(self.refresh_button, QDialogButtonBox.ButtonRole.ActionRole)
         layout.addWidget(self.title_label)
         layout.addWidget(self.state_label)
+        layout.addWidget(self.credits_label)
         layout.addWidget(self.table, 1)
         layout.addWidget(self.meta_label)
         layout.addWidget(buttons)
@@ -154,6 +188,10 @@ class DetailsDialog(QDialog):
         }
         self.state_label.setText(f"상태: {state_names[status]} · {detail}")
         self.table.setRowCount(0)
+        icon_bucket = snapshot.icon_bucket if snapshot else None
+        self.credits_label.setText(
+            _credits_text(icon_bucket.credits if icon_bucket is not None else None)
+        )
         if snapshot is None:
             self.meta_label.setText("아직 표시할 사용량이 없습니다.")
             return
@@ -161,15 +199,9 @@ class DetailsDialog(QDialog):
             self._add_bucket_window(bucket, "Primary", bucket.primary)
             self._add_bucket_window(bucket, "Secondary", bucket.secondary)
         updated = datetime.fromtimestamp(snapshot.fetched_at).astimezone().strftime("%Y-%m-%d %H:%M:%S")
-        icon_bucket = snapshot.icon_bucket
         meta = [f"마지막 정상 갱신: {updated}"]
         if icon_bucket:
-            meta.extend(
-                [
-                    f"플랜: {icon_bucket.plan_type or '미상'}",
-                    _credits_text(icon_bucket.credits),
-                ]
-            )
+            meta.append(f"플랜: {icon_bucket.plan_type or '미상'}")
         self.meta_label.setText(" · ".join(meta))
 
     def _add_bucket_window(

@@ -129,6 +129,53 @@ def test_sparse_notification_preserves_existing_bucket_metadata():
     assert bucket.credits.balance == "0"
 
 
+def test_sparse_notification_null_metadata_preserves_credit_balance_and_plan():
+    payload = bucket_payload("codex", 30)
+    payload["credits"] = {
+        "hasCredits": True,
+        "unlimited": False,
+        "balance": "12.5000",
+    }
+    payload["planType"] = "pro"
+    previous = snapshot_from_result({"rateLimits": payload}, fetched_at=10)
+
+    updated = snapshot_from_notification(
+        {
+            "rateLimits": {
+                "limitId": "codex",
+                "primary": {"usedPercent": 45},
+                "credits": None,
+                "planType": None,
+            }
+        },
+        previous,
+        fetched_at=20,
+    )
+
+    assert updated.icon_bucket.primary.used_percent == 45
+    assert updated.icon_bucket.credits.balance == "12.5000"
+    assert updated.icon_bucket.plan_type == "pro"
+
+
+def test_sparse_notification_can_clear_reached_state():
+    payload = bucket_payload("codex", 100)
+    payload["rateLimitReachedType"] = "rate_limit_reached"
+    previous = snapshot_from_result({"rateLimits": payload}, fetched_at=10)
+
+    updated = snapshot_from_notification(
+        {
+            "rateLimits": {
+                "limitId": "codex",
+                "rateLimitReachedType": None,
+            }
+        },
+        previous,
+        fetched_at=20,
+    )
+
+    assert updated.icon_bucket.reached_type is None
+
+
 def test_notification_without_limit_id_requests_full_refresh_instead_of_guessing():
     previous = snapshot_from_result({"rateLimits": bucket_payload()})
     payload = bucket_payload()

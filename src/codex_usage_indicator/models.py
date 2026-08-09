@@ -251,8 +251,14 @@ def snapshot_from_notification(
         bucket = RateLimitBucket.from_payload(raw)
     else:
         merged = existing.to_cache()
-        for key in ("limitName", "planType", "credits", "rateLimitReachedType"):
+        for key in ("limitName", "rateLimitReachedType"):
             if key in raw:
+                merged[key] = raw[key]
+        # App Server rolling notifications are sparse. Nullable account
+        # metadata can be unavailable in an update and must not erase the last
+        # value from account/rateLimits/read.
+        for key in ("planType", "credits"):
+            if raw.get(key) is not None:
                 merged[key] = raw[key]
         for key in ("primary", "secondary"):
             if key not in raw:
