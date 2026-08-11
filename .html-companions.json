@@ -1,0 +1,41 @@
+{
+  "ownershipMarker": "Owned by Markdown HTML Companion v0.1.0",
+  "schemaVersion": 1,
+  "generator": {
+    "name": "Markdown HTML Companion",
+    "version": "0.1.0"
+  },
+  "generatedAt": "2026-08-11T01:59:10.488858+00:00",
+  "repository": "yunhyok/codex-usage-indicator",
+  "baseBranch": "main",
+  "baseSha": "432b1a5c8470f6f14e5588c2678fbfdf83731376",
+  "branch": "codex/add-html-companions-20260811",
+  "sourceMarkdownCount": 1,
+  "generatedHtmlCount": 1,
+  "documents": [
+    {
+      "source": "README.md",
+      "sourceBlobSha": "846c15599ac9a04931fe94cc9ae3b5dbf9c03a30",
+      "sourceSha256": "45257f3480761fefb45c3e94bcfcb3c568da1e2ca477a273f81af6887d490eb6",
+      "output": "README.companion.html",
+      "outputSha256": "cd2a35dd486fb0eafdd1aaa593842b4e72ad593f62cb751e9d4e9bf30c3fd4b2",
+      "headingCount": 6,
+      "visualClassification": "DATA_RELATIONSHIP",
+      "visualTitle": "Usage indicator semantics",
+      "diagramAdded": true,
+      "evidence": [
+        {
+          "lineStart": 3,
+          "lineEnd": 14,
+          "summary": "Ring, brightness, hover, and click meanings are defined."
+        },
+        {
+          "lineStart": 16,
+          "lineEnd": 22,
+          "summary": "App Server response fields, cache fields, and stale-state behavior are defined."
+        }
+      ],
+      "urlCount": 7
+    }
+  ]
+}
