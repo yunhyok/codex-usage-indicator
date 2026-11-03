@@ -1,5 +1,5 @@
 #define MyAppName "Codex Usage Indicator"
-#define MyAppVersion "0.2.0"
+#define MyAppVersion "0.2.1"
 #define MyAppPublisher "yunhyok"
 #define MyAppExeName "CodexUsageIndicator.exe"
 
@@ -9,10 +9,12 @@ AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-DefaultDirName={localappdata}\Programs\{#MyAppName}
+DefaultDirName={autopf}\{#MyAppName}
+DisableDirPage=no
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
-PrivilegesRequired=lowest
+PrivilegesRequired=admin
+PrivilegesRequiredOverridesAllowed=dialog
 OutputDir=..\dist
 OutputBaseFilename=CodexUsageIndicatorSetup-{#MyAppVersion}
 SetupIconFile=..\assets\app_icon.ico
@@ -50,7 +52,7 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
 Filename: "{app}\{#MyAppExeName}"; Description: "{#MyAppName} 실행"; Flags: nowait postinstall skipifsilent
 
 [UninstallRun]
-Filename: "{app}\{#MyAppExeName}"; Parameters: "--quit-existing"; Flags: runhidden waituntilterminated skipifdoesntexist; RunOnceId: "StopCodexUsageIndicator"
+Filename: "{app}\{#MyAppExeName}"; Parameters: "--quit-existing"; Flags: runhidden waituntilterminated skipifdoesntexist; RunOnceId: "StopCodexUsageIndicator"; Check: not IsAdminInstallMode
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{localappdata}\{#MyAppName}"

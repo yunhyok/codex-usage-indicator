@@ -1,4 +1,4 @@
-# Codex Usage Indicator 0.2.0
+# Codex Usage Indicator 0.2.1
 
 Windows 알림 영역에서 Codex 사용량 제한의 남은 비율과 추가 크레딧 잔액을 확인하는 트레이 앱입니다.
 
@@ -23,7 +23,7 @@ Codex에 로그인되어 있지 않거나 호환되는 Codex CLI를 찾지 못�
 
 ## 설치
 
-GitHub Release의 `CodexUsageIndicatorSetup-0.2.0.exe`를 실행합니다. 기본 설치 위치는 사용자 LocalAppData이며 관리자 권한이 필요하지 않습니다. Windows 로그인 시 자동 시작 옵션은 기본으로 선택됩니다.
+GitHub Release의 `CodexUsageIndicatorSetup-0.2.1.exe`를 실행합니다. 기본 위치는 Program Files이며 설치 화면에서 다른 폴더를 선택할 수 있습니다. Windows 로그인 시 자동 시작 옵션은 기본으로 선택됩니다.
 
 현재 설치 파일은 코드 서명 인증서가 없어 미서명 상태이며 Windows SmartScreen 경고가 나타날 수 있습니다.
 
